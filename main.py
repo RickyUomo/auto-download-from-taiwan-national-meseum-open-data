@@ -43,6 +43,7 @@ class DownloadBot:
             next_page_btn.click()
             time.sleep(3)
             
+        return self.item_list
             
     def download_fabric(self, result_img):
         result_img.click()
@@ -105,7 +106,4 @@ if __name__ == '__main__':
         config = json.load(config_file)
     
     bot = DownloadBot(config)
-    bot.find_all_items()
-
-    while True:
-        pass
+    items = bot.find_all_items()
