@@ -27,19 +27,22 @@ class DownloadBot:
         pages = self.wait.until(EC.presence_of_element_located((By.XPATH,"//*[@id='divListItems2']/div/nav/div[2]/ul[2]/li[1]/span[3]")))
         pages_int = int(pages.text)
 
-        item_body = self.driver.find_element(By.TAG_NAME, "tbody")
-        item_tr_list = item_body.find_elements(By.TAG_NAME, "tr")
-        
-        
-        for item_tr in item_tr_list:
-            result_img = item_tr.find_element(By.CLASS_NAME, "result-img")
-            self.download_fabric(result_img)
-
-        for page in range(1, pages_int+1):
-            if page == 1: # no need to click page btn
-                pass
-            else:
-                pass
+        for page in range(pages_int):
+            try:
+                item_body = self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "tbody")))
+                next_page_btn = self.wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='divListItems2']/div/nav/div[2]/ul[1]/li[8]/div")))
+                item_tr_list = item_body.find_elements(By.TAG_NAME, "tr")
+            except StaleElementReferenceException:
+                print('StaleElementReferenceException error')
+            
+            for item_tr in item_tr_list:
+                result_img = item_tr.find_element(By.CLASS_NAME, "result-img")
+                self.download_fabric(result_img)
+            
+            time.sleep(5)
+            next_page_btn.click()
+            time.sleep(3)
+            
             
     def download_fabric(self, result_img):
         result_img.click()
@@ -50,7 +53,7 @@ class DownloadBot:
                 item_rows = self.wait.until(EC.presence_of_all_elements_located((By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr")))
                 print('loaded!!')
                 break
-        time.sleep(3)
+        time.sleep(1)
         
         # do all the download operations
         row_size = len(item_rows)
