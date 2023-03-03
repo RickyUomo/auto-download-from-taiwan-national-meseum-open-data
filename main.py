@@ -15,6 +15,7 @@ class DownloadBot:
         self.url = config['url']
         self.service = Service(config['chrome_driver_path'])
         self.options = webdriver.ChromeOptions()
+        self.item_list = []
         
         self.driver = webdriver.Chrome(service=self.service, options=self.options)
         self.wait = WebDriverWait(self.driver, 30)
@@ -23,7 +24,7 @@ class DownloadBot:
         self.driver.get(self.url)
         
         self.main_tab = self.driver.current_window_handle
-        pages = self.driver.find_element(By.XPATH,"//*[@id='divListItems2']/div/nav/div[2]/ul[2]/li[1]/span[3]")
+        pages = self.wait.until(EC.presence_of_element_located((By.XPATH,"//*[@id='divListItems2']/div/nav/div[2]/ul[2]/li[1]/span[3]")))
         pages_int = int(pages.text)
 
         item_body = self.driver.find_element(By.TAG_NAME, "tbody")
@@ -33,8 +34,6 @@ class DownloadBot:
         for item_tr in item_tr_list:
             result_img = item_tr.find_element(By.CLASS_NAME, "result-img")
             self.download_fabric(result_img)
-            
-        main_tab.close()
 
         for page in range(1, pages_int+1):
             if page == 1: # no need to click page btn
@@ -44,21 +43,53 @@ class DownloadBot:
             
     def download_fabric(self, result_img):
         result_img.click()
-        time.sleep(5)
+        
         for window_handle in self.driver.window_handles:
             if window_handle != self.main_tab:
                 self.driver.switch_to.window(window_handle)
-                body = self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "tbody")))
-                print('loaded!!', body)
+                item_rows = self.wait.until(EC.presence_of_all_elements_located((By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr")))
+                print('loaded!!')
                 break
         time.sleep(3)
         
         # do all the download operations
+        row_size = len(item_rows)
         
+        if row_size == 4:
+            name = self.wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='main3']/div[1]/div/div[1]/div[1]/b"))).text
+            id = self.driver.find_element(By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr[1]/td[3]").text
+            size = self.driver.find_element(By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr[3]/td[2]").text
+            era = self.driver.find_element(By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr[4]/td[2]").text
+            time.sleep(1)
+            ITEM = {
+                "id": id,
+                "name": name,
+                "size": size,
+                "era": era
+            }
+            self.item_list.append(ITEM)
+        elif row_size == 5:
+            name = self.wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='main3']/div[1]/div/div[1]/div[1]/b"))).text
+            pass
+        elif row_size == 6: 
+            name = self.wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='main3']/div[1]/div/div[1]/div[1]/b"))).text
+            id = self.driver.find_element(By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr[1]/td[3]").text
+            size = self.driver.find_element(By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr[4]/td[2]").text
+            era = self.driver.find_element(By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr[5]/td[2]").text
+            desc = self.driver.find_element(By.XPATH, "//*[@id='collapseExample']/div/div[1]/table/tbody/tr[6]/td[2]").text
+            time.sleep(1)
+            ITEM = {
+                "id": id,
+                "name": name,                
+                "size": size,
+                "era": era,
+                "desc": desc
+            }
+            self.item_list.append(ITEM)
+            
         # close the item tab, and switch to main tab
         self.driver.close()
         self.driver.switch_to.window(self.main_tab)
-            
 
 if __name__ == '__main__':
     with open('config.json') as config_file:
